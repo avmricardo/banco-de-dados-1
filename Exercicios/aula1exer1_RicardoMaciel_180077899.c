@@ -24,7 +24,27 @@ typedef struct
 
 void CadastroPessoa(Pessoa *bancoMotoristas, int *quantidadeMotoristas)
 {
+
     Pessoa proprietario;
+    int id;
+
+    FILE *arquivo;
+
+    arquivo = fopen("proprietarios.bin", "rb");
+
+    if (arquivo == NULL)
+    {
+        id = 0; // verifica se o arquivo é vazio, e se for, inicializa o id como 0
+    } else
+    {
+        fseek(arquivo, -1*sizeof(Pessoa), SEEK_END); // coloca o ponteiro na posição do último proprietário para podermos pegar o id dele
+        fread(&proprietario, sizeof(Pessoa), 1, arquivo);
+        id = proprietario.id + 1;
+    }
+
+    fclose(arquivo);
+    arquivo = fopen("proprietarios.bin", "wb");
+
     printf("Cadastro de motorista: \n");
 
     printf("Nome: ");
@@ -46,6 +66,9 @@ void CadastroPessoa(Pessoa *bancoMotoristas, int *quantidadeMotoristas)
 
     bancoMotoristas[*quantidadeMotoristas] = proprietario;
     (*quantidadeMotoristas)++;
+
+    fwrite(&proprietario, 1, sizeof(Pessoa), arquivo);
+    fclose(arquivo);
 }
 
 void ExibirMotoristas(Pessoa *bancoMotoristas, int quantidadeMotoristas)
@@ -60,7 +83,7 @@ void CadastroCarros(Carro *bancoCarros, int *quantidadeCarros)
 {
     Carro carro;
 
-    printf("Cadastro de veículo: ");
+    printf("Cadastro de veículo: \n");
 
     printf("Marca: ");
     scanf(" %[^\n]", carro.marca);
@@ -69,16 +92,27 @@ void CadastroCarros(Carro *bancoCarros, int *quantidadeCarros)
     scanf(" %[^\n]", carro.modelo);
 
     printf("Ano: ");
-    scanf("%i", carro.ano);
+    scanf("%i", &carro.ano);
 
     printf("Cor: ");
     scanf(" %[^\n]", carro.cor);
 
-    printf("Proprietário: ");
-    scanf(" %[^\n]", carro.proprietario);
+    // printf("Proprietário: ");
+    // scanf(" %[^\n]", carro.proprietario);
 
     bancoCarros[*quantidadeCarros] = carro;
     (*quantidadeCarros)++;
+}
+
+void ExibirCarros(Carro *bancoCarros, int quantidadeCarros)
+{
+    for (int i = 0; i < quantidadeCarros; i++)
+    {
+        printf("Marca: %s\n", bancoCarros[i].marca);
+        printf("Modelo: %s\n", bancoCarros[i].modelo);
+        printf("Ano: %i\n", bancoCarros[i].ano);
+        printf("Cor: %s\n", bancoCarros[i].cor);
+    }
 }
 
 int main()
@@ -99,6 +133,7 @@ int main()
         printf("Cadastro de motorista: 1\n");
         printf("Exibir motoristas: 2\n");
         printf("Cadastro de veículo: 3\n");
+        printf("Exibir carros: 4\n");
         scanf("%i", &opcao);
         printf("\n");
 
@@ -111,12 +146,20 @@ int main()
         case 2:
             ExibirMotoristas(bancoMotoristas, quantidadeMotoristas);
             break;
+
+        case 3:
+            CadastroCarros(bancoCarros, &quantidadeCarros);
+            break;
+
+        case 4:
+            ExibirCarros(bancoCarros, quantidadeCarros);
+            break;
         
         default:
             printf("Opção inválida!");
             break;
         }
     }
-    while (opcao != 4);
+    while (opcao != 5);
     
 }

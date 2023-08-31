@@ -30,7 +30,7 @@ void CadastroPessoa(Pessoa *bancoMotoristas, int *quantidadeMotoristas)
 
     FILE *arquivo;
 
-    arquivo = fopen("proprietarios.bin", "rb");
+    arquivo = fopen("proprietarios.bin", "ab");
 
     if (arquivo == NULL)
     {
@@ -71,7 +71,7 @@ void CadastroPessoa(Pessoa *bancoMotoristas, int *quantidadeMotoristas)
     fclose(arquivo);
 }
 
-void ExibirMotoristas(Pessoa *bancoMotoristas, int quantidadeMotoristas)
+void ExibirMotoristas(Pessoa *bancoMotoristas, int quantidadeMotoristas) // Alterar consulta para leitura de arquivo
 {
     for (int i = 0; i < quantidadeMotoristas; i++)
     {
@@ -82,6 +82,22 @@ void ExibirMotoristas(Pessoa *bancoMotoristas, int quantidadeMotoristas)
 void CadastroCarros(Carro *bancoCarros, int *quantidadeCarros)
 {
     Carro carro;
+
+    int id;
+
+    FILE *arquivo;
+
+    arquivo = fopen("carros.bin", "ab");  // abrindo arquivo apenas para leitura (verificar se ele é vazio)
+
+    if (arquivo == NULL)
+    {
+        id = 0; // verifica se o arquivo é vazio, e se for, inicializa o id como 0
+    } else
+    {
+        fseek(arquivo, -1*sizeof(Carro), SEEK_END); // coloca o ponteiro na posição do último proprietário para podermos pegar o id dele
+        fread(&carro, sizeof(Carro), 1, arquivo);
+        id = carro.id + 1;
+    }
 
     printf("Cadastro de veículo: \n");
 
@@ -102,9 +118,12 @@ void CadastroCarros(Carro *bancoCarros, int *quantidadeCarros)
 
     bancoCarros[*quantidadeCarros] = carro;
     (*quantidadeCarros)++;
+
+    fwrite(&carro, 1, sizeof(Carro), arquivo);
+    fclose(arquivo);
 }
 
-void ExibirCarros(Carro *bancoCarros, int quantidadeCarros)
+void ExibirCarros(Carro *bancoCarros, int quantidadeCarros) // Alterar consulta para leitura de arquivo
 {
     for (int i = 0; i < quantidadeCarros; i++)
     {

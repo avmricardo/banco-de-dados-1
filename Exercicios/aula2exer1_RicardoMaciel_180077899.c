@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 struct Pessoa;
 
@@ -20,6 +21,77 @@ typedef struct
     char cpf[12];
     char endereco[50];
 } Pessoa;
+
+
+int CPFJaCadastrado(char *cpf)
+{
+    FILE *arquivo = fopen("proprietarios.bin", "rb");
+
+    if (arquivo == NULL)
+    {
+        printf("Erro ao ler arquivo!\n");
+        return 0; // Retorna 0 para indicar erro
+    }
+
+    Pessoa proprietario;
+
+    while (fread(&proprietario, sizeof(Pessoa), 1, arquivo) == 1)
+    {
+        if (strcmp(proprietario.cpf, cpf) == 0)
+        {
+            fclose(arquivo);
+            return 1; // Retorna 1 para indicar que o CPF já está cadastrado
+        }
+    }
+
+    fclose(arquivo);
+    return 0; // Retorna 0 para indicar que o CPF não está cadastrado
+}
+
+
+void InserirOrdenadoPorCPF(Pessoa novaPessoa)
+{
+    FILE *arquivo = fopen("proprietarios.bin", "r+b");
+
+    if (arquivo == NULL)
+    {
+        printf("Erro ao abrir o arquivo!\n");
+        return;
+    }
+
+    Pessoa proprietario;
+    int posicaoInserir = 0;
+
+    // Encontra a posição correta para inserção
+    while (fread(&proprietario, sizeof(Pessoa), 1, arquivo) == 1)
+    {
+        if (strcmp(novaPessoa.cpf, proprietario.cpf) < 0)
+            break;
+        posicaoInserir++;
+    }
+
+    // Move o cursor para a posição de inserção
+    fseek(arquivo, 0, SEEK_END);
+
+    // Calcula o tamanho do deslocamento para acomodar a nova pessoa
+    int tamanhoDeslocamento = (posicaoInserir - 1) * sizeof(Pessoa);
+
+    // Lê todas as pessoas após a posição de inserção e as move uma posição para a frente
+    for (int i = posicaoInserir; i > 0; i--)
+    {
+        fseek(arquivo, (i - 1) * sizeof(Pessoa), SEEK_SET);
+        fread(&proprietario, sizeof(Pessoa), 1, arquivo);
+        fseek(arquivo, i * sizeof(Pessoa), SEEK_SET);
+        fwrite(&proprietario, sizeof(Pessoa), 1, arquivo);
+    }
+
+    // Volta para a posição correta e escreve a nova pessoa
+    fseek(arquivo, tamanhoDeslocamento, SEEK_SET);
+    fwrite(&novaPessoa, sizeof(Pessoa), 1, arquivo);
+
+    fclose(arquivo);
+}
+
 
 void CadastroPessoa()
 {
@@ -58,9 +130,15 @@ void CadastroPessoa()
     printf("CPF: ");
     scanf(" %[^\n]", proprietario.cpf);
 
+    if (CPFJaCadastrado(proprietario.cpf))
+    {
+        printf("CPF já cadastrado no sistema!\n");
+        return;
+    }
+
     proprietario.idPessoa = id;
 
-    fwrite(&proprietario, 1, sizeof(Pessoa), arquivo);
+    InserirOrdenadoPorCPF(proprietario);
     fclose(arquivo);
 }
 

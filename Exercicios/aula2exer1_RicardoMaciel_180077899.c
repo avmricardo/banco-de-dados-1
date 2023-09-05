@@ -70,14 +70,11 @@ void InserirOrdenadoPorCPF(Pessoa novaPessoa)
         posicaoInserir++;
     }
 
-    // Move o cursor para a posição de inserção
+    // Move os registros após a posição de inserção para frente
     fseek(arquivo, 0, SEEK_END);
+    int tamanhoDeslocamento = (ftell(arquivo) - (posicaoInserir * sizeof(Pessoa)));
 
-    // Calcula o tamanho do deslocamento para acomodar a nova pessoa
-    int tamanhoDeslocamento = (posicaoInserir - 1) * sizeof(Pessoa);
-
-    // Lê todas as pessoas após a posição de inserção e as move uma posição para a frente
-    for (int i = posicaoInserir; i > 0; i--)
+    for (int i = ftell(arquivo) / sizeof(Pessoa); i > posicaoInserir; i--)
     {
         fseek(arquivo, (i - 1) * sizeof(Pessoa), SEEK_SET);
         fread(&proprietario, sizeof(Pessoa), 1, arquivo);
@@ -86,11 +83,12 @@ void InserirOrdenadoPorCPF(Pessoa novaPessoa)
     }
 
     // Volta para a posição correta e escreve a nova pessoa
-    fseek(arquivo, tamanhoDeslocamento, SEEK_SET);
+    fseek(arquivo, posicaoInserir * sizeof(Pessoa), SEEK_SET);
     fwrite(&novaPessoa, sizeof(Pessoa), 1, arquivo);
 
     fclose(arquivo);
 }
+
 
 
 void CadastroPessoa()

@@ -11,7 +11,8 @@ typedef struct
     char modelo[10];
     int ano;
     char cor[10];
-    int cpfProprietario;
+    char renavam[12];
+    char cpfProprietario[12];
 } Carro;
 
 typedef struct
@@ -90,7 +91,6 @@ void InserirOrdenadoPorCPF(Pessoa novaPessoa)
 }
 
 
-
 void CadastroPessoa()
 {
 
@@ -122,8 +122,6 @@ void CadastroPessoa()
 
     printf("Endereço: ");
     scanf(" %[^\n]", proprietario.endereco);
-
-    char cpf[12];
 
     printf("CPF: ");
     scanf(" %[^\n]", proprietario.cpf);
@@ -172,6 +170,74 @@ void ExibirMotoristas()
     
 }
 
+
+int RenavamJaCadastrado(char *renavam)
+{
+    FILE *arquivo = fopen("carros.bin", "rb");
+
+    if (arquivo == NULL)
+    {
+        printf("Erro ao ler arquivo!\n");
+        return 0; // Retorna 0 para indicar erro
+    }
+
+    Carro carro;
+
+    while (fread(&carro, sizeof(Carro), 1, arquivo) == 1)
+    {
+        if (strcmp(carro.renavam, renavam) == 0)
+        {
+            fclose(arquivo);
+            return 1; // Retorna 1 para indicar que o CPF já está cadastrado
+        }
+    }
+
+    fclose(arquivo);
+    return 0; // Retorna 0 para indicar que o CPF não está cadastrado
+}
+
+
+void InserirOrdenadoPorRenavam(Carro novoCarro)
+{
+    FILE *arquivo = fopen("carros.bin", "r+b");
+
+    if (arquivo == NULL)
+    {
+        printf("Erro ao abrir o arquivo!\n");
+        return;
+    }
+
+    Carro carro;
+    int posicaoInserir = 0;
+
+    // Encontra a posição correta para inserção
+    while (fread(&carro, sizeof(Carro), 1, arquivo) == 1)
+    {
+        if (strcmp(novoCarro.renavam, carro.renavam) < 0)
+            break;
+        posicaoInserir++;
+    }
+
+    // Move os registros após a posição de inserção para frente
+    fseek(arquivo, 0, SEEK_END);
+    int tamanhoDeslocamento = (ftell(arquivo) - (posicaoInserir * sizeof(Carro)));
+
+    for (int i = ftell(arquivo) / sizeof(Carro); i > posicaoInserir; i--)
+    {
+        fseek(arquivo, (i - 1) * sizeof(Carro), SEEK_SET);
+        fread(&carro, sizeof(Carro), 1, arquivo);
+        fseek(arquivo, i * sizeof(Carro), SEEK_SET);
+        fwrite(&carro, sizeof(Carro), 1, arquivo);
+    }
+
+    // Volta para a posição correta e escreve a nova pessoa
+    fseek(arquivo, posicaoInserir * sizeof(Carro), SEEK_SET);
+    fwrite(&novoCarro, sizeof(Carro), 1, arquivo);
+
+    fclose(arquivo);
+}
+
+
 void CadastroCarros()
 {
     Carro carro;
@@ -203,6 +269,15 @@ void CadastroCarros()
 
     printf("Modelo: ");
     scanf(" %[^\n]", carro.modelo);
+    
+    printf("RENAVAM: ");
+    scanf(" %[^\n]", carro.renavam);
+
+    if (RenavamJaCadastrado(carro.renavam))
+    {
+        printf("RENAVAM já cadastrado no sistema!\n");
+        return;
+    }
 
     printf("Ano: ");
     scanf("%i", &carro.ano);
@@ -210,9 +285,18 @@ void CadastroCarros()
     printf("Cor: ");
     scanf(" %[^\n]", carro.cor);
 
+    printf("CPF do proprietário: ");
+    scanf(" %[^\n]", carro.cpfProprietario);
+
+    if (!CPFJaCadastrado(carro.cpfProprietario))
+    {
+        printf("CPF não cadastrado no sistema!\n Cadastre o motorista antes.\n");
+        return;
+    }
+
     carro.idCarro = id;
 
-    fwrite(&carro, 1, sizeof(Carro), arquivo);
+    InserirOrdenadoPorRenavam(carro);
     fclose(arquivo);
 }
 
@@ -235,8 +319,9 @@ void ExibirCarros() // Alterar consulta para leitura de arquivo
         printf("Modelo: %s\n", carro.modelo);
         printf("Ano: %i\n", carro.ano);
         printf("Cor: %s\n", carro.cor);
-        printf("CPF proprietário: %i\n", carro.cpfProprietario);
-        printf("IdCarro: %i\n", carro.idCarro);
+        printf("CPF proprietário: %s\n", carro.cpfProprietario);
+        printf("RENAVAM: %s\n", carro.renavam);
+        printf("\n");
         quantidadeCarros++;
     }
 
